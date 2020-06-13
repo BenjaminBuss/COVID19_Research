@@ -62,17 +62,12 @@ historical_weather %>% gather(3:33, key = day, value = temp) %>%
 ```
 
 
-### Miselaneous Data Sets
-
-Documentation on various smaller datasets that required little to no cleaning, or were only used for joining other datasets.
-
-
-##### Zipcode Normals Stations
+### Zipcode Normals Stations
 
 A data set from the same NOAA database the historical daily normals came from, it can be accessed here <ftp://ftp.ncdc.noaa.gov/pub/data/normals/1981-2010/station-inventories/>. Contains three columns, station, zip code, and name. It is used to help connect the historical and 2020 year weather data.
 
 
-##### Zip County FIPs
+### Zip County FIPs
 
 A publicly available data set from data.world that combines USPS, Census and US HUD sources to allow accurate match ups between FIPS codes and zip codes, it can be accessed here <https://data.world/niccolley/us-zipcode-to-county-state>. Used in conjunction with the [Zipcode Normals Stations](#Zipcode Normals Stations) data set to connect weather and population data.
 
@@ -84,7 +79,7 @@ inner_join(zip_fips, zipcodes_normals_stations, by = c("ZIP" = "zipcode")) %>%
 This section is the section of this document that is most likely to introduce error or bias. Especially later on, since there are multiple zip codes per a single FIPs code and so if there are multiple weather stations(with different observations) ********************************
 
 
-##### Geographic Area
+### Geographic Area
 
 Data provided by census.gov containing land size(in square miles) on a per county level. The only cleaning done was cutting it down to the needed columns and renaming them. <https://www.census.gov/library/publications/2011/compendia/usa-counties-2011.html#LND>
 
