@@ -6,7 +6,6 @@ This markdown is a step by step walk through of the data cleaning, processing an
 
 ## Description of Key Data Sets and Sources
 
-The analysis is based on three key data sets, New York Time's case counts, weather data, Census data
 
 ### New York Times Case Counts
 
@@ -39,13 +38,11 @@ WHERE
 Census data was obtained from a publicly available data set that can be found here: <https://www2.census.gov/programs-surveys/popest/datasets/2010-2018/counties/totals/>. For a full dictionary of data provided by census.gov can be found here <https://www2.census.gov/programs-surveys/popest/datasets/2010-2018/counties/totals/co-est2018-alldata.pdf>. The original data set has 80 columns but only a few will be kept. The STATE and COUNTY columns will turn into the fips code, and the column containing the estimated population for 2018(POPESTIMATE2018). The region, division, and 2010 census population columns are being kept around for kicks and giggles.
 
 ```
-
 raw_census_data %>% filter(SUMLEV == 50) %>% 
   select(STATE, COUNTY, REGION, DIVISION, CENSUS2010POP, "population" = POPESTIMATE2018) %>% 
   mutate(STATE = str_pad(STATE,  width = 2, side = "left", pad = "0"), 
          COUNTY = str_pad(COUNTY, width = 3, side = "left", pad = "0")) %>% 
   unite(STATE, COUNTY, col = "fips", sep = "")
-
 ```
 
 
@@ -58,12 +55,10 @@ Since the original data comes in a rather unintuitive format more cleaning was r
 <ftp://ftp.ncdc.noaa.gov/pub/data/normals/1981-2010/products/temperature/dly-tavg-normal.txt>
 
 ```
-
 historical_weather %>% gather(3:33, key = day, value = temp) %>%
     filter(month %in% c('03', '04', '05'), !(temp %in% c('-9999', '-8888', '-7777', '-6666', '-5555'))) %>%
     mutate(day = sub(".", "", day), day = as.numeric(day), temp = str_sub(temp, end = -2),
          temp = as.numeric(temp) / 10)
-
 ```
 
 
@@ -82,10 +77,8 @@ A data set from the same NOAA database the historical daily normals came from, i
 A publicly available data set from data.world that combines USPS, Census and US HUD sources to allow accurate match ups between FIPS codes and zip codes, it can be accessed here <https://data.world/niccolley/us-zipcode-to-county-state>. Used in conjunction with the [Zipcode Normals Stations](#Zipcode Normals Stations) data set to connect weather and population data.
 
 ```
-
 inner_join(zip_fips, zipcodes_normals_stations, by = c("ZIP" = "zipcode")) %>% 
   select(station, zip = ZIP, fips = STCOUNTYFP, county = COUNTYNAME, state = STATE, name)
-  
 ```
 
 This section is the section of this document that is most likely to introduce error or bias. Especially later on, since there are multiple zip codes per a single FIPs code and so if there are multiple weather stations(with different observations) ********************************
@@ -96,7 +89,5 @@ This section is the section of this document that is most likely to introduce er
 Data provided by census.gov containing land size(in square miles) on a per county level. The only cleaning done was cutting it down to the needed columns and renaming them. <https://www.census.gov/library/publications/2011/compendia/usa-counties-2011.html#LND>
 
 ```
-
 geographic_area %>% select(name = Areaname, fips = STCOU, land_size = LND010190D)
-
 ```
