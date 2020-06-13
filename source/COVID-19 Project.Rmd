@@ -1,0 +1,235 @@
+---
+title: "COVID-19 Project"
+author: "Benjamin Buss"
+date: "2020/04/23"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+```
+
+
+### Introduction
+
+*Disclaimer: I'm not an Epidemiologist in any way shape or form.*
+
+Analysis of COVID-19 data as a project for an undergrad statistics class at Utah Valley University.
+
+
+### Data and Methods
+
+#### Data
+
+The brunt of this analysis was based on data from The New York Times, based on reports from state and local health agencies, which is hosted in [this](https://www.github.com/nytimes/covid-19-data/) Github repository. It contains the date of the observation, the state, county, fips code, active cases, and deaths from COVID-19. You can find the data dictionary [here](https://github.com/nytimes/covid-19-data/#methodology-and-definitions).
+
+Historical daily normals were pulled from [this](ftp://ftp.ncdc.noaa.gov/pub/data/normals/1981-2010/documentation/) NOAA dataset, documentation is available [here](ftp://ftp.ncdc.noaa.gov/pub/data/normals/1981-2010/documentation/daily-temperature-normals-methodology.pdf). Historical normals are based on a 30 year time frame from 1989 to 2010. The data was adjusted for bias due to changes in sampling lie and measurement capabilities. All weather observations from the months of March and April were used in the analysis.
+
+Daily weather data for 2020 was pulled from [this](https://console.cloud.google.com/bigquery?p=bigquery-public-data&d=ghcn_d&page=dataset) BigQuery dataset and originally from the Global Historical Climate Network(GHCN). The main value used was the average daily temperature(in 10th of degrees Celsius). Celsius was 
+
+Population data was obtained from <www.census.gov>. It is based on 2010 census data, adjusted for assumed changes to population between the 8 years since the census.
+
+Data on per county land size was also obtained from <www.census.gov>. It's measured in square miles.
+
+Additional description of data sources and cleaning methodology can be found [here](https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/data/README.md).
+
+
+```{r, include = F, warning = F}
+
+corona_counties_url <- "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
+corona_counties <- read_csv(corona_counties_url)
+
+census_data_url <- "https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/data/census_data_cut.csv"
+census_data     <- read_csv(census_data_url)
+
+historical_weather_data_url <- "https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/data/historical_weather_data.csv"
+historical_weather_data <- read_csv(historical_weather_data_url)
+
+current_weather_data_url <- "https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/data/current_weather_data.csv"
+current_weather_data <- read_csv(current_weather_data_url)
+
+geographic_area_url <- "https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/data/geographic_area.csv"
+geographic_area     <- read_csv(geographic_area_url)
+
+stations_url <- "https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/data/stations.csv"
+stations <- read_csv(stations_url)
+
+rm(corona_counties_url, census_data_url, historical_weather_data_url, current_weather_data_url, geographic_area_url, stations_url)
+
+```
+
+
+Using the census data we selected the 60 most populous counties in the United States. All other data was selected to match these counties. 
+
+
+```{r, include = F, warning = F} 
+
+census_data$STATE   <- str_pad(census_data$STATE,  width = 2, side = "left", pad = "0")
+census_data$COUNTY  <- str_pad(census_data$COUNTY, width = 3, side = "left", pad = "0")
+
+census_data <- census_data %>% unite(STATE, COUNTY, col = "fips", sep = "") %>% group_by(fips) %>% 
+  summarise(population = sum(TOT_POP)) %>% top_n(60, population)
+
+corona_counties_pop <- inner_join(corona_counties, census_data, by = "fips")
+
+population_density <- inner_join(census_data, geographic_area, by = "fips") %>%
+  transmute(fips, density = population / land_size)
+
+```
+
+#### Methods
+
+All analysis was done using R and was designed to be fully reproducible solely based on this notebook.
+
+For each of the 60 most populous counties we started by selecting a 29 period starting on the first day they observed at least one hundred cases of COVID-19. A growth factor was computed by taking that days cases divided by the previous days cases. Then a geometric mean was created from the 28 growth factors.
+
+```{r}
+
+growth_factors <- corona_counties_pop %>% filter(cases >= 100) %>% group_by(fips) %>% arrange(date) %>%
+  slice(1:29) %>%
+  mutate(case_growth = (cases / lag(cases))) %>% filter(!is.na(case_growth))
+
+geom_growth <- growth_factors %>% group_by(fips) %>% summarise(n = n(), geom_factor = prod(case_growth)^(1/n)) 
+
+# ** Not being used, considered more closely matching weather data but pushed off for now **
+# start_dates <- growth_factors %>% group_by(fips) %>% arrange(date) %>% slice(1) %>% ungroup() %>% 
+#   select(fips, start_date = date) %>% mutate(end_date = start_date + lubridate::days(21))
+```
+
+
+For the historical and current weather data, we created a proportion of the probability that the temperature on a day in the time frame was between 40 and 50 degrees Fahrenheit.
+
+```{r}
+
+current_weather_proportions <- current_weather_data %>% 
+  mutate(within = case_when(
+    temp >= 40 & temp <= 50 ~ 1, TRUE ~ 0)) %>% # Code column as 1 if within 40 & 50 degrees or 0 otherise
+  group_by(station) %>% summarise(n = n(), with = sum(within)) %>%
+  transmute(station, current_proportion = with / n)
+
+historical_weather_proportions <- historical_weather_data %>% mutate(within = case_when(
+    temp >= 40 & temp <= 50 ~ 1,
+    TRUE ~ 0)) %>% group_by(station) %>% summarise(n = n(), with = sum(within)) %>%
+  transmute(station, historical_proportion = with / n)
+
+```
+
+```{r, include = F }
+
+weather_data <- inner_join(historical_weather_proportions, current_weather_proportions, by = "station")
+
+growth_data <- left_join(geom_growth, stations, by = "fips") %>% filter(station %in% (weather_data %>% pull(station))) %>%
+  inner_join(., population_density, by = "fips")
+
+all_data <- inner_join(growth_data, weather_data, by = "station") %>%
+  select(fips, geom_factor, density, current_proportion, historical_proportion)
+
+```
+
+
+Linear regressions
+
+
+```{r}
+
+simple_model <- lm(geom_factor ~ current_proportion, data = all_data)
+added_model  <- lm(geom_factor ~ current_proportion + historical_proportion, data = all_data)
+
+# https://rpubs.com/josevilardy/confounding ??
+percentage_change <- (simple_model$coefficients[2] - added_model$coefficients[2])/simple_model$coefficients[2]*100; percentage_change
+
+model <- lm(geom_factor ~ density + current_proportion + historical_proportion, data = all_data)
+
+summary(model)
+
+qqnorm(model$residuals)
+
+cor(all_data$geom_factor, all_data$density)
+
+```
+
+
+### Results
+
+
+
+### Discussion
+
+
+
+### Limitations
+
+
+
+### Acknowledgments
+
+
+
+### References
+
+
+#### Data Links:  
+
+
+Case Counts: <https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html>
+
+  - <https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv>
+  
+  
+Census Data: <https://www.census.gov/data/tables/time-series/demo/popest/2010s-counties-detail.html>
+
+  - <https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/census_data.csv>
+
+
+Current Weather: <https://console.cloud.google.com/bigquery?p=bigquery-public-data&d=ghcn_d&page=dataset>
+
+  - <https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/current_weather_data.csv>
+
+
+Historical Climate: <ftp://ftp.ncdc.noaa.gov/pub/data/normals/1981-2010/documentation/>
+
+  - <https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/historical_weather_data.csv>
+  
+
+Land Area: <https://www.census.gov/library/publications/2011/compendia/usa-counties-2011.html#LND>
+
+  - <https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/geographic_area.csv>
+  
+
+Stations and Zip codes <ftp://ftp.ncdc.noaa.gov/pub/data/normals/1981-2010/station-inventories/>
+
+                       <https://www.kaggle.com/danofer/zipcodes-county-fips-crosswalk/version/1#>
+                       
+  - <https://raw.githubusercontent.com/BenjaminBuss/COVID_Project/master/stations.csv>
+
+
+
+
+### Tables and Figures
+
+```{r, warning=F}
+
+us_map <- blscrapeR::county_map_data
+
+us_growth <- corona_counties %>% filter(cases > 50) %>% group_by(fips) %>% arrange(date) %>%
+  slice(1:22) %>%
+  mutate(case_growth = (cases / lag(cases))) %>% filter(!is.na(case_growth))
+
+us_geom <- us_growth %>% group_by(fips) %>% summarise(n = n(), geom_factor = prod(case_growth)^(1/n)) 
+
+ggplot() +
+  geom_map(data = us_map, map = us_map,
+           aes(x = long, y = lat, map_id = id, group = group),
+           fill = "#ffffff", color = "#0e0e0e", size = 0.15) +
+  geom_map(data = us_geom, map = us_map, aes_string(map_id = "fips", fill = us_geom$geom_factor),
+           color = "#0e0e0e", size = 0.15)
+
+# https://cran.r-project.org/web/packages/blscrapeR/vignettes/Mapping_BLS_Data.html
+
+```
+
