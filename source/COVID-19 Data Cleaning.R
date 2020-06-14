@@ -39,21 +39,22 @@ rm(census_data_url, current_weather_url, dly_tavg_normal_url, geographic_area_ur
 
 # Clean Data --------------------------------------------------------------
 
-census_data <- census_data %>% filter(SUMLEV != 50) %>% 
-  select(STATE, COUNTY, REGION, DIVISION, CENSUS2010POP, "population" = POPESTIMATE2018) %>% 
-  mutate(STATE = str_pad(STATE,  width = 2, side = "left", pad = "0"), 
-         COUNTY = str_pad(COUNTY, width = 3, side = "left", pad = "0")) %>% 
-  unite(STATE, COUNTY, col = "fips", sep = "")
+census_data <- census_data %>% filter(SUMLEV == '050') %>% 
+    select(STATE, COUNTY, REGION, DIVISION, CENSUS2010POP, "population" = POPESTIMATE2018) %>% 
+    mutate(STATE = str_pad(STATE,  width = 2, side = "left", pad = "0"), 
+           COUNTY = str_pad(COUNTY, width = 3, side = "left", pad = "0")) %>% 
+    unite(STATE, COUNTY, col = "fips", sep = "")
 
 historical_weather <- dly_tavg_normal %>% gather(3:33, key = day, value = temp) %>%
-  filter(month %in% c('03', '04', '05'), !(temp %in% c('-9999', '-8888', '-7777', '-6666', '-5555'))) %>%
-  mutate(day = sub(".", "", day), day = as.numeric(day), temp = str_sub(temp, end = -2),
-         temp = as.numeric(temp) / 10)
+    filter(month %in% c('03', '04', '05'), !(temp %in% c('-9999', '-8888', '-7777', '-6666', '-5555'))) %>%
+    mutate(day = sub(".", "", day), day = as.numeric(day), temp = str_sub(temp, end = -2),
+           temp = as.numeric(temp) / 10)
 
 zipcode_station <- inner_join(zip_county_fips, zipcode_normals, by = c("ZIP" = "zipcode")) %>% 
-  select(station, zip = ZIP, fips = STCOUNTYFP, county = COUNTYNAME, state = STATE, name)
+    select(station, zip = ZIP, fips = STCOUNTYFP, county = COUNTYNAME, state = STATE, name)
 
 geographic_area <- geographic_area %>% select(name = Areaname, fips = STCOU, land_size = LND010190D)
+
 
 # Export Data -------------------------------------------------------------
 

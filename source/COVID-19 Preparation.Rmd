@@ -45,7 +45,7 @@ WHERE
 Census data was obtained from a publicly available data set that can be found here: <https://www2.census.gov/programs-surveys/popest/datasets/2010-2018/counties/totals/>. For a full dictionary of data provided by census.gov can be found here <https://www2.census.gov/programs-surveys/popest/datasets/2010-2018/counties/totals/co-est2018-alldata.pdf>. The original data set has 80 columns but only a few will be kept. The STATE and COUNTY columns will turn into the fips code, and the column containing the estimated population for 2018(POPESTIMATE2018). The region, division, and 2010 census population columns are being kept around for kicks and giggles.
 
 ```
-raw_census_data %>% filter(SUMLEV == 50) %>% 
+raw_census_data %>% filter(SUMLEV == '050') %>% 
   select(STATE, COUNTY, REGION, DIVISION, CENSUS2010POP, "population" = POPESTIMATE2018) %>% 
   mutate(STATE = str_pad(STATE,  width = 2, side = "left", pad = "0"), 
          COUNTY = str_pad(COUNTY, width = 3, side = "left", pad = "0")) %>% 
