@@ -53,6 +53,7 @@ historical_weather <- dly_tavg_normal %>% gather(3:33, key = day, value = temp) 
 zipcode_station <- inner_join(zip_county_fips, zipcode_normals, by = c("ZIP" = "zipcode")) %>% 
   select(station, zip = ZIP, fips = STCOUNTYFP, county = COUNTYNAME, state = STATE, name)
 
+geographic_area <- geographic_area %>% select(name = Areaname, fips = STCOU, land_size = LND010190D)
 
 # Export Data -------------------------------------------------------------
 
