@@ -1,0 +1,54 @@
+---
+title: "Effects of Temperature on COVID-19 Case Growth"
+author: "Benjamin Buss"
+output: pdf_document
+---
+
+## Abstract
+
+
+## Background and Significance
+
+
+## Methods
+
+
+## Results
+
+
+## Discussion / Conclusion
+
+
+## References
+
+
+
+
+
+
+
+## Introduction
+
+
+## Data and Methods
+
+
+## Results
+
+
+## Discussion
+
+
+## Limitations
+
+
+## Acknowledgments
+
+
+## References
+
+
+## Tables and Figures
+
+
+## 
