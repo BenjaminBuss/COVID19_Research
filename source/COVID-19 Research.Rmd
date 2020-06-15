@@ -49,6 +49,7 @@ rm(corona_counties_url, census_data_url, historical_weather_data_url, current_we
 
 ```{r}
 
+# Didn't do this in the query like I claimed I did
 current_weather <- current_weather %>% mutate(temp = ( value / 10 ) * ( 9 / 5 ) + 32 )
 
 ```
@@ -56,7 +57,8 @@ current_weather <- current_weather %>% mutate(temp = ( value / 10 ) * ( 9 / 5 ) 
 Using the census data we selected the 60 most populous counties in the United States. All other data was selected to match these counties. 
 
 
-```{r, include = F, warning = F} 
+```{r} 
+#, include = F, warning = F} 
 
 census_data <- census_data %>% top_n(60, population)
 
@@ -64,18 +66,6 @@ corona_counties_pop <- inner_join(corona_counties, census_data, by = "fips")
 
 population_density <- inner_join(census_data, geographic_area, by = "fips") %>%
   transmute(fips, density = population / land_size)
-
-```
-
-#### Methods
-
-All analysis was done using R and was designed to be fully reproducible solely based on this notebook.
-
-For each of the 60 most populous counties we started by selecting a 29 period starting on the first day they observed at least one hundred cases of COVID-19. A growth factor was computed by taking that days cases divided by the previous days cases. Then a geometric mean was created from the 28 growth factors.
-
-$$Growth Factor = ( \prod_{n = 2}^{28} \frac{Cases_{n day}}{Cases_{n-1 day}} )^{\frac{1}{n-1}} $$
-
-```{r}
 
 corona_counties_cut <- corona_counties_pop %>% filter(cases >= 100) %>% group_by(fips) %>% 
     arrange(date) %>% slice(1:29) 
@@ -99,12 +89,6 @@ zzz <- inner_join(corona_counties_cut, y, by = c("fips", "date")) %>%
 
 counts <- count(zzz, fips)
 
-```
-
-For the historical and current weather data, we created a proportion of the probability that the temperature on a day in the time frame was between 40 and 50 degrees Fahrenheit.
-
-```{r}
-
 weather_proportions <- zzz %>%
   mutate(within = case_when(
     cur_temp >= 40 & cur_temp <= 50 ~ 1, TRUE ~ 0),
@@ -113,22 +97,10 @@ weather_proportions <- zzz %>%
   group_by(fips) %>% summarise(n = n(), with = sum(within), his_with = sum(his_within)) %>%
   transmute(fips, current_proportion = with / n, historical_proportion = his_with / n)
 
-```
-
-```{r, include = F }
-
 growth_data <- inner_join(geom_growth, weather_proportions, by = "fips") %>%
   inner_join(., population_density, by = "fips")
 
 all_data <- growth_data %>% select(fips, geom_factor, density, current_proportion, historical_proportion)
-
-```
-
-
-Linear regressions
-
-
-```{r}
 
 simple_model <- lm(geom_factor ~ current_proportion, data = all_data)
 added_model  <- lm(geom_factor ~ current_proportion + historical_proportion, data = all_data)
@@ -140,7 +112,46 @@ qqnorm(model$residuals)
 cor(all_data$geom_factor, all_data$density)
 
 summary(simple_model)
-plot(simple_model)
+plot(simple_model) 
+
+
+```
+
+#### Methods
+
+All analysis was done using R and was designed to be fully reproducible solely based on this notebook.
+
+For each of the 60 most populous counties we started by selecting a 29 period starting on the first day they observed at least one hundred cases of COVID-19. A growth factor was computed by taking that days cases divided by the previous days cases. Then a geometric mean was created from the 28 growth factors.
+
+$$Growth Factor = ( \prod_{n = 2}^{28} \frac{Cases_{n day}}{Cases_{n-1 day}} )^{\frac{1}{n-1}} $$
+
+```{r}
+
+
+
+```
+
+For the historical and current weather data, we created a proportion of the probability that the temperature on a day in the time frame was between 40 and 50 degrees Fahrenheit.
+
+```{r}
+
+
+
+```
+
+```{r, include = F }
+
+
+
+```
+
+
+Linear regressions
+
+
+```{r}
+
+
 ```
 
 
@@ -217,7 +228,6 @@ ggplot() +
            color = "#0e0e0e", size = 0.15)
 # https://cran.r-project.org/web/packages/blscrapeR/vignettes/Mapping_BLS_Data.html
 ```
-
 
 
 

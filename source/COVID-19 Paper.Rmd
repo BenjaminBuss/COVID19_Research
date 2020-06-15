@@ -7,19 +7,33 @@ output: pdf_document
 ## Abstract
 
 
+
+
 ## Background and Significance
+
+
 
 
 ## Methods
 
 
+  
+$$Growth Factor = ( \prod_{n = 2}^{28} \frac{Cases_{n day}}{Cases_{n-1 day}} )^{\frac{1}{n-1}} $$
+
+
 ## Results
+
+
 
 
 ## Discussion / Conclusion
 
 
+
+
 ## References
+
+
 
 
 
