@@ -25,11 +25,15 @@ For a full description of data sources and cleaning methodology please see this 
 There are 5 crucial data sets utilized in this analysis
 
 (@) New York Times Case Counts  
+
 (@) 2020 Daily Weather Data  
-Data set is pulled from a NOAA data set that was provided courtesy of Google BigQuery.
+Dataset is pulled from a NOAA data set that was provided curtesy of Google BigQuery
+
 (@) Census Data  
+
 (@) Historical Weather Data  
-30 year daily temperature normals provided by the NOAA.
+30 year daily normals provided by the NOAA
+
 (@) Geographic Area  
 Land size yo
 

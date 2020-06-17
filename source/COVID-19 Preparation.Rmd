@@ -93,4 +93,3 @@ Data provided by census.gov containing land size(in square miles) on a per count
 ```
 geographic_area %>% select(name = Areaname, fips = STCOU, land_size = LND010190D)
 ```
-

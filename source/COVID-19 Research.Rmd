@@ -54,7 +54,6 @@ current_weather <- current_weather %>% mutate(temp = ( value / 10 ) * ( 9 / 5 ) 
 
 ```
 
-Using the census data we selected the 60 most populous counties in the United States. All other data was selected to match these counties. 
 
 
 ```{r} 

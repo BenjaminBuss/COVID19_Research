@@ -33,12 +33,17 @@ Data set is pulled from a NOAA data set that was provided courtesy of Google Big
 (@) Geographic Area  
 Land size yo
 
-ABC
+All cleaned data is hosted in [this](https://github.com/BenjaminBuss/COVID19_Research/tree/master/data) GitHub repository.
 
+All data was transformed to a per county level, when there was multiple weather stations in a county an average of the temperatures was taken.
 
 
 ### Methods
-  
+
+
+
+
+
 $$Growth Factor = ( \prod_{n = 2}^{28} \frac{Cases_{n day}}{Cases_{n-1 day}} )^{\frac{1}{n-1}} $$
 
 
