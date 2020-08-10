@@ -92,7 +92,7 @@ weather_proportions <- zzz %>%
   mutate(within = case_when(
     cur_temp >= 40 & cur_temp <= 50 ~ 1, TRUE ~ 0),
     his_within = case_when(
-    his_temp >= 40 & his_temp <= 50 ~ 1, TRUE ~ 0)) %>% # Code column as 1 if within 40 & 50 degrees or 0 otherise
+    his_temp >= 40 & his_temp <= 50 ~ 1, TRUE ~ 0)) %>% # Code column as 1 if within 40 & 50 degrees or 0 otherwise
   group_by(fips) %>% summarise(n = n(), with = sum(within), his_with = sum(his_within)) %>%
   transmute(fips, current_proportion = with / n, historical_proportion = his_with / n)
 
